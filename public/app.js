@@ -142,10 +142,10 @@
     const allSwag = items.every(([, s]) => s);
     return `
       ${showSwagAll ? `<div class="row between" style="margin-bottom:6px">
-        <span class="muted small">${items.length} day${items.length > 1 ? 's' : ''} picked</span>
+        <span class="muted small">${items.length} day${items.length > 1 ? 's' : ''} picked${items.length > 1 ? ` (${fmt(items[0][0], { month: 'short', day: 'numeric' })} – ${fmt(items[items.length - 1][0], { month: 'short', day: 'numeric' })})` : ''}</span>
         <label class="toggle small"><input type="checkbox" data-act="swag-all" ${allSwag ? 'checked' : ''}> Swag every day</label>
       </div>` : ''}
-      ${items
+      <div class="${items.length > 8 ? 'cart-scroll' : ''}">${items
         .map(
           ([iso, swag]) => `
         <div class="cart-item">
@@ -155,7 +155,7 @@
           <button class="x" data-remove="${iso}" aria-label="Remove ${fmt(iso)}">×</button>
         </div>`
         )
-        .join('')}`;
+        .join('')}</div>`;
   }
   const cartTotal = (cart, s) => [...cart.values()].reduce((t, swag) => t + (swag ? s.price_swag_cents : s.price_regular_cents), 0);
 
@@ -175,9 +175,16 @@
       } else if (el.dataset.act === 'prev' || el.dataset.act === 'next') {
         ctx.setMonth(addMonths(ctx.getMonth(), el.dataset.act === 'prev' ? -1 : 1));
         rerender();
-      } else if (el.dataset.act === 'fridays' || el.dataset.act === 'all') {
-        const days = availableInMonth(ctx.getMonth(), ctx.calOpts(), el.dataset.act === 'fridays' ? 5 : 0);
-        if (!days.length) return toast('No open days left this month.');
+      } else if (['fridays', 'all', 'fridays-year', 'all-year'].includes(el.dataset.act)) {
+        const act = el.dataset.act;
+        const o = ctx.calOpts();
+        const months = [ctx.getMonth()];
+        if (act.endsWith('-year')) {
+          months[0] = monthKey(o.today > o.settings.year_start ? o.today : o.settings.year_start);
+          while (months[months.length - 1] < monthKey(o.settings.year_end)) months.push(addMonths(months[months.length - 1], 1));
+        }
+        const days = months.flatMap((m) => availableInMonth(m, o, act.startsWith('fridays') ? 5 : 0));
+        if (!days.length) return toast(act.endsWith('-year') ? 'No open days left this school year.' : 'No open days left this month.');
         const allIn = days.every((d) => ctx.cart.has(d));
         days.forEach((d) => (allIn ? ctx.cart.delete(d) : !ctx.cart.has(d) && ctx.cart.set(d, ctx.defaultSwag())));
         rerender();
@@ -203,9 +210,10 @@
     const login = S.authMode === 'login';
     $app.innerHTML = `
       <div class="auth">
-        <div class="logo">👖</div>
+        <div class="logo"><img src="/flyer.png" alt="Meadowlark Flyers mascot"></div>
         <h1>${esc(S.pub?.school_name ? S.pub.school_name + ' ' : '')}Jeans Days</h1>
         <p class="lead">Pay for your jeans days in a few taps.</p>
+        <p class="tagline">All in, every day!</p>
         <div class="price-pills">
           <span class="pill"><b>${money(S.pub?.price_regular_cents ?? 200)}</b> / day in jeans</span>
           <span class="pill"><b>${money(S.pub?.price_swag_cents ?? 100)}</b> / day with ${esc(S.pub?.school_name || 'school')} swag</span>
@@ -223,7 +231,7 @@
         </form>
         <p style="text-align:center">
           ${login ? 'New here?' : 'Already have an account?'}
-          <button class="linkbtn" id="swap" style="color:var(--denim);font-weight:700">${login ? 'Create an account' : 'Log in'}</button>
+          <button class="linkbtn" id="swap" style="color:var(--brand);font-weight:700">${login ? 'Create an account' : 'Log in'}</button>
         </p>
         ${login ? '<p class="muted small" style="text-align:center">Forgot your password? Ask the jeans day admin to reset it.</p>' : ''}
       </div>`;
@@ -262,9 +270,12 @@
       : '';
     $app.innerHTML = `
       <header class="topbar">
-        <div>
-          <h1>👖 ${esc(S.me.settings.school_name)} Jeans Days</h1>
-          <div class="sub">Hi, ${esc(u.name.split(' ')[0])}</div>
+        <div class="row" style="gap:10px;min-width:0">
+          <img class="mascot" src="/flyer.png" alt="">
+          <div style="min-width:0">
+            <h1>${esc(S.me.settings.school_name)} Jeans Days</h1>
+            <div class="sub">Hi, ${esc(u.name.split(' ')[0])} 👖</div>
+          </div>
         </div>
         <div class="row">
           <button class="linkbtn" id="acctBtn">Account</button>
@@ -381,14 +392,16 @@
         <h2>Pick your jeans days</h2>
         <p class="small muted" style="margin:-4px 0 12px">${money(s.price_regular_cents)}/day, or ${money(s.price_swag_cents)}/day when you also wear ${esc(s.school_name)} swag.</p>
         <div id="calWrap">${calendarHTML({ month: S.month, cart: S.cart, ...opts })}</div>
-        <div class="chips" style="margin-top:12px">
-          <button class="btn light sm" data-act="fridays">+ Every Friday this month</button>
+        <div class="quick" style="margin-top:12px">
+          <button class="btn light sm" data-act="fridays">+ Fridays this month</button>
           <button class="btn light sm" data-act="all">+ Every day this month</button>
-          ${S.cart.size ? '<button class="btn ghost sm" data-act="clear">Clear</button>' : ''}
+          <button class="btn light sm" data-act="fridays-year">+ Fridays, all year</button>
+          <button class="btn light sm" data-act="all-year">+ Every day, all year</button>
         </div>
+        ${S.cart.size ? '<button class="btn ghost sm block" style="margin-top:8px" data-act="clear">Clear picked days</button>' : ''}
         <div class="legend">
           <span style="--sw:var(--green)">Paid</span>
-          <span style="--sw:var(--denim)">Picked</span>
+          <span style="--sw:var(--brand)">Picked</span>
           <span style="--sw:#fff;--sh:inset 0 0 0 3px var(--gold)">Swag</span>
           <span style="--sw:#e6e9ee">No school</span>
         </div>

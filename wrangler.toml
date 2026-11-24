@@ -10,12 +10,12 @@ binding = "ASSETS"
 # Comma-separated emails that automatically get admin access when they sign up / log in.
 ADMIN_EMAILS = ""
 # The school's time zone, used to decide what "today" is.
-TIMEZONE = "America/Chicago"
+TIMEZONE = "America/Denver"   # Gillette, WY (Mountain time)
 
 [[d1_databases]]
 binding = "DB"
 database_name = "jeans-tracker"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "0076a8c0-228e-4d12-a862-6048bdc70f93"
 
 # Secrets (set with `npx wrangler secret put NAME`, never put them in this file):
 #   STRIPE_SECRET_KEY      sk_live_... or sk_test_...   (leave unset = demo mode, no real charges)

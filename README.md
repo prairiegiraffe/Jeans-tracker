@@ -15,20 +15,14 @@ Runs on **Cloudflare Workers + D1** (free tier is plenty) with **Stripe Checkout
 
 You need: a Cloudflare account, a Stripe account, and Node.js installed.
 
-### 1. Install and create the database
+### 1. Deploy
+The D1 database (`jeans-tracker`) is already created and set up in the Kellee@prairiegiraffe.com Cloudflare account, and its ID is in `wrangler.toml`. To deploy:
 ```bash
 npm install
-npx wrangler login
-npx wrangler d1 create jeans-tracker
-```
-Copy the `database_id` it prints into `wrangler.toml` (replace `REPLACE_WITH_YOUR_D1_DATABASE_ID`).
-
-Put the admin's email in `wrangler.toml` → `ADMIN_EMAILS` (comma-separate several). Check `TIMEZONE` matches the school.
-
-```bash
-npm run db:init:remote
+npx wrangler login      # pick the Kellee@prairiegiraffe.com account
 npm run deploy
 ```
+Optional: put the admin's email in `wrangler.toml` → `ADMIN_EMAILS` (comma-separate several). Time zone is set to Mountain (Gillette, WY).
 You'll get a URL like `https://jeans-tracker.<you>.workers.dev`. You can add a custom domain in the Cloudflare dashboard.
 
 The app now runs in **demo mode** (no cards charged) so you can try it.
