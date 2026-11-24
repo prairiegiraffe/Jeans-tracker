@@ -1,0 +1,15 @@
+{
+  "name": "jeans-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pay-to-wear-jeans day tracker for school staff",
+  "scripts": {
+    "dev": "wrangler dev",
+    "db:init:local": "wrangler d1 migrations apply jeans-tracker --local",
+    "db:init:remote": "wrangler d1 migrations apply jeans-tracker --remote",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
